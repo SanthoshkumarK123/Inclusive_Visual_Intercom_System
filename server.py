@@ -27,14 +27,91 @@ def capture_loop():
 @app.route('/')
 def home():
     return render_template_string('''
+    <!DOCTYPE html>
     <html>
     <head>
         <title>Inclusive Visual Intercom</title>
+
         <meta http-equiv="refresh" content="5">
+
+        <style>
+            body{
+                font-family: Arial, sans-serif;
+                background-color:#f4f6f9;
+                text-align:center;
+                margin:0;
+                padding:0;
+            }
+
+            header{
+                background:#2c3e50;
+                color:white;
+                padding:20px;
+                font-size:28px;
+                font-weight:bold;
+            }
+
+            .container{
+                margin-top:40px;
+            }
+
+            .camera-box{
+                display:inline-block;
+                background:white;
+                padding:20px;
+                border-radius:10px;
+                box-shadow:0px 4px 15px rgba(0,0,0,0.2);
+            }
+
+            img{
+                width:640px;
+                border-radius:8px;
+            }
+
+            .status{
+                margin-top:15px;
+                font-size:18px;
+                color:#27ae60;
+                font-weight:bold;
+            }
+
+            footer{
+                margin-top:40px;
+                padding:15px;
+                background:#2c3e50;
+                color:white;
+                font-size:14px;
+            }
+
+        </style>
     </head>
+
     <body>
-        <h2>Live Image (Refresh every 5 sec)</h2>
-        <img src="/static/captured.jpg" width="500">
+
+        <header>
+            Inclusive Visual Intercom System
+        </header>
+
+        <div class="container">
+
+            <div class="camera-box">
+
+                <h2>Live Camera Feed</h2>
+
+                <img src="/static/captured.jpg">
+
+                <div class="status">
+                    Refreshing every 5 seconds
+                </div>
+
+            </div>
+
+        </div>
+
+        <footer>
+            ESP32 Based Internal Communication System
+        </footer>
+
     </body>
     </html>
     ''')
