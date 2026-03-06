@@ -1,0 +1,38 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+#define BUTTON 4
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+const char* server = "http://192.168.1.8:5000/start";
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(BUTTON, INPUT_PULLUP);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+
+  if (digitalRead(BUTTON) == LOW) {
+
+    Serial.println("Sending Start Signal");
+
+    HTTPClient http;
+    http.begin(server);
+    http.GET();
+    http.end();
+
+    delay(2000);
+  }
+}
