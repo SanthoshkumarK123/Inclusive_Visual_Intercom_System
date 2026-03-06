@@ -1,38 +1,108 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
 #define BUTTON 4
 
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
+LiquidCrystal_I2C lcd(0x27,16,2);
 
-const char* server = "http://192.168.1.8:5000/start";
+const char* ssid = "galaxy";
+const char* password = "87654321";
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(BUTTON, INPUT_PULLUP);
+const char* startServer = "http://10.122.39.38:5000/start";
+const char* statusServer = "http://10.122.39.38:5000/status";
 
-  WiFi.begin(ssid, password);
+bool callActive = false;
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+void setup(){
 
-  Serial.println("Connected to WiFi");
+Serial.begin(115200);
+
+pinMode(BUTTON,INPUT_PULLUP);
+
+lcd.init();
+lcd.backlight();
+
+lcd.setCursor(0,0);
+lcd.print("System Ready");
+
+WiFi.begin(ssid,password);
+
+while(WiFi.status()!=WL_CONNECTED){
+delay(500);
+Serial.print(".");
 }
 
-void loop() {
+lcd.clear();
+lcd.print("WiFi Connected");
+delay(2000);
 
-  if (digitalRead(BUTTON) == LOW) {
+lcd.clear();
+lcd.print("System Ready");
 
-    Serial.println("Sending Start Signal");
+}
 
-    HTTPClient http;
-    http.begin(server);
-    http.GET();
-    http.end();
+void loop(){
 
-    delay(2000);
-  }
+// BUTTON PRESSED
+if(!callActive && digitalRead(BUTTON)==LOW){
+
+lcd.clear();
+lcd.print("Signal Sent");
+
+HTTPClient http;
+http.begin(startServer);
+
+int response = http.GET();
+
+Serial.print("Response: ");
+Serial.println(response);
+
+http.end();
+
+callActive = true;
+
+delay(2000);
+
+lcd.clear();
+lcd.print("Waiting...");
+
+}
+
+// CHECK CALL STATUS
+if(callActive){
+
+HTTPClient http;
+
+http.begin(statusServer);
+
+int httpCode = http.GET();
+
+if(httpCode == 200){
+
+String status = http.getString();
+
+if(status == "ENDED"){
+
+lcd.clear();
+lcd.print("Call Ended");
+
+delay(5000);
+
+lcd.clear();
+lcd.print("System Ready");
+
+callActive = false;
+
+}
+
+}
+
+http.end();
+
+delay(2000);
+
+}
+
 }
