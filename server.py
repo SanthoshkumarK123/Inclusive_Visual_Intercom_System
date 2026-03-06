@@ -116,19 +116,27 @@ def home():
     </html>
     ''')
 
+call_status = "IDLE"
+
 @app.route('/start')
 def start_capture():
-    global capture_running
+    global capture_running, call_status
+    call_status = "ACTIVE"
     if not capture_running:
         capture_running = True
         threading.Thread(target=capture_loop).start()
-    return "Capture Started"
+    return "STARTED"
 
 @app.route('/stop')
 def stop_capture():
-    global capture_running
+    global capture_running, call_status
     capture_running = False
-    return "Capture Stopped"
+    call_status = "ENDED"
+    return "STOPPED"
+
+@app.route('/status')
+def status():
+    return call_status
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
