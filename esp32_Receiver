@@ -1,0 +1,49 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+#define STOP_BUTTON 18
+#define LED 23
+#define BUZZER 22
+#define MOTOR 21
+
+const char* ssid = "YOUR_HOTSPOT_NAME";
+const char* password = "YOUR_PASSWORD";
+
+const char* server = "http://10.122.39.38:5000/stop";
+
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(STOP_BUTTON, INPUT_PULLUP);
+  pinMode(LED, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(MOTOR, OUTPUT);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+}
+
+void loop() {
+
+  if (digitalRead(STOP_BUTTON) == LOW) {
+
+    Serial.println("Stopping Call");
+
+    digitalWrite(LED, LOW);
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(MOTOR, LOW);
+
+    HTTPClient http;
+    http.begin(server);
+    http.GET();
+    http.end();
+
+    delay(2000);
+  }
+
+}
