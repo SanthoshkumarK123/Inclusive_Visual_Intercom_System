@@ -1,49 +1,111 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
-#define STOP_BUTTON 18
 #define LED 23
-#define BUZZER 22
-#define MOTOR 21
+#define BUZZER 19
+#define MOTOR 18
+#define STOP_BUTTON 5
 
-const char* ssid = "YOUR_HOTSPOT_NAME";
-const char* password = "YOUR_PASSWORD";
+LiquidCrystal_I2C lcd(0x27,16,2);
 
-const char* server = "http://10.122.39.38:5000/stop";
+const char* ssid = "galaxy";
+const char* password = "87654321";
 
-void setup() {
+const char* stopServer = "http://10.122.39.38:5000/stop";
+const char* statusServer = "http://10.122.39.38:5000/status";
 
-  Serial.begin(115200);
+bool callActive = false;
 
-  pinMode(STOP_BUTTON, INPUT_PULLUP);
-  pinMode(LED, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
-  pinMode(MOTOR, OUTPUT);
+void setup(){
 
-  WiFi.begin(ssid, password);
+Serial.begin(115200);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-  }
+pinMode(LED,OUTPUT);
+pinMode(BUZZER,OUTPUT);
+pinMode(MOTOR,OUTPUT);
+pinMode(STOP_BUTTON,INPUT_PULLUP);
+
+lcd.init();
+lcd.backlight();
+
+lcd.setCursor(0,0);
+lcd.print("Receiver Ready");
+
+WiFi.begin(ssid,password);
+
+while(WiFi.status()!=WL_CONNECTED){
+delay(500);
+Serial.print(".");
+}
+
+lcd.clear();
+lcd.print("WiFi Connected");
+delay(2000);
+
+lcd.clear();
+lcd.print("Waiting...");
 
 }
 
-void loop() {
+void loop(){
 
-  if (digitalRead(STOP_BUTTON) == LOW) {
+// Check server only if no call is active
+if(!callActive){
 
-    Serial.println("Stopping Call");
+HTTPClient http;
+http.begin(statusServer);
 
-    digitalWrite(LED, LOW);
-    digitalWrite(BUZZER, LOW);
-    digitalWrite(MOTOR, LOW);
+int httpCode = http.GET();
 
-    HTTPClient http;
-    http.begin(server);
-    http.GET();
-    http.end();
+if(httpCode == 200){
 
-    delay(2000);
-  }
+String status = http.getString();
+
+if(status == "ACTIVE"){
+
+callActive = true;
+
+lcd.clear();
+lcd.print("Visitor Arrived");
+
+digitalWrite(LED,HIGH);
+digitalWrite(BUZZER,HIGH);
+digitalWrite(MOTOR,HIGH);
+
+}
+
+}
+
+http.end();
+
+}
+
+// Stop button
+if(callActive && digitalRead(STOP_BUTTON)==LOW){
+
+HTTPClient http;
+http.begin(stopServer);
+http.GET();
+http.end();
+
+callActive = false;
+
+digitalWrite(LED,LOW);
+digitalWrite(BUZZER,LOW);
+digitalWrite(MOTOR,LOW);
+
+lcd.clear();
+lcd.print("Call Ended");
+
+delay(3000);
+
+lcd.clear();
+lcd.print("Waiting...");
+
+}
+
+delay(1000);
 
 }
