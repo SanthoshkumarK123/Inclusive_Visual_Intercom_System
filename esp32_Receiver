@@ -1,0 +1,111 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define LED 23
+#define BUZZER 19
+#define MOTOR 18
+#define STOP_BUTTON 5
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+const char* ssid = "galaxy";
+const char* password = "87654321";
+
+const char* stopServer = "http://10.122.39.38:5000/stop";
+const char* statusServer = "http://10.122.39.38:5000/status";
+
+bool callActive = false;
+
+void setup(){
+
+Serial.begin(115200);
+
+pinMode(LED,OUTPUT);
+pinMode(BUZZER,OUTPUT);
+pinMode(MOTOR,OUTPUT);
+pinMode(STOP_BUTTON,INPUT_PULLUP);
+
+lcd.init();
+lcd.backlight();
+
+lcd.setCursor(0,0);
+lcd.print("Receiver Ready");
+
+WiFi.begin(ssid,password);
+
+while(WiFi.status()!=WL_CONNECTED){
+delay(500);
+Serial.print(".");
+}
+
+lcd.clear();
+lcd.print("WiFi Connected");
+delay(2000);
+
+lcd.clear();
+lcd.print("Waiting...");
+
+}
+
+void loop(){
+
+// Check server only if no call is active
+if(!callActive){
+
+HTTPClient http;
+http.begin(statusServer);
+
+int httpCode = http.GET();
+
+if(httpCode == 200){
+
+String status = http.getString();
+
+if(status == "ACTIVE"){
+
+callActive = true;
+
+lcd.clear();
+lcd.print("Visitor Arrived");
+
+digitalWrite(LED,HIGH);
+digitalWrite(BUZZER,HIGH);
+digitalWrite(MOTOR,HIGH);
+
+}
+
+}
+
+http.end();
+
+}
+
+// Stop button
+if(callActive && digitalRead(STOP_BUTTON)==LOW){
+
+HTTPClient http;
+http.begin(stopServer);
+http.GET();
+http.end();
+
+callActive = false;
+
+digitalWrite(LED,LOW);
+digitalWrite(BUZZER,LOW);
+digitalWrite(MOTOR,LOW);
+
+lcd.clear();
+lcd.print("Call Ended");
+
+delay(3000);
+
+lcd.clear();
+lcd.print("Waiting...");
+
+}
+
+delay(1000);
+
+}
